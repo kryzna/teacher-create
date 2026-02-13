@@ -8,6 +8,7 @@ def render():
     init_session_state()
     require_auth()
     
+    st.markdown("""<style>[data-testid="stSidebarNav"] {display: none !important;}</style>""", unsafe_allow_html=True)
     st.set_page_config(page_title="Observations - Monty", page_icon="👁️", layout="wide")
     
     render_sidebar()

@@ -7,6 +7,7 @@ def render():
     init_session_state()
     require_auth()
     
+    st.markdown("""<style>[data-testid="stSidebarNav"] {display: none !important;}</style>""", unsafe_allow_html=True)
     st.set_page_config(page_title="Settings - Monty", page_icon="⚙️", layout="wide")
     
     init_settings_session_state()
@@ -294,7 +295,15 @@ def render_notifications_section():
     with col2:
         push_schedule = st.checkbox("Schedule Changes", value=settings["push_schedule_changes"])
     
-    reminder_time = st.time_input("Daily Reminder Time", value=st.session_state.settings["notifications"].get("reminder_time", "18:00"))
+    from datetime import datetime, time
+    
+    stored_time = st.session_state.settings["notifications"].get("reminder_time", "18:00")
+    if isinstance(stored_time, str):
+        default_time = datetime.strptime(stored_time, "%H:%M:%S").time()
+    else:
+        default_time = stored_time
+    
+    reminder_time = st.time_input("Daily Reminder Time", value=default_time)
     
     if st.button("Save Notification Settings", type="primary"):
         st.session_state.settings["notifications"] = {
