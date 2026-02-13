@@ -1,5 +1,6 @@
 import streamlit as st
 from datetime import datetime, timedelta
+import time
 from src.monty.session import init_session_state, require_auth
 
 
@@ -118,13 +119,21 @@ def render_add_entry():
         
         notes = st.text_area("Notes", placeholder="Document what the student worked on today...", height=150)
         
-        if st.button("Save Entry", use_container_width=True):
+        date_str = date.strftime("%Y-%m-%d") if date else None
+        existing_entry = any(
+            e["student"] == student and e["date"] == date_str and e["subject"] == subject
+            for e in st.session_state.daily_entries
+        )
+        
+        if existing_entry:
+            st.warning(f"Entry already exists for {student} on {date_str} with subject {subject}")
+        
+        if st.button("Save Entry", use_container_width=True, disabled=existing_entry):
             if not student:
                 st.error("Please select a student!")
             elif not activities:
                 st.error("Please add at least one activity!")
             else:
-                date_str = date.strftime("%Y-%m-%d") if date else None
                 current_entries = st.session_state.daily_entries
                 new_id = max([e["id"] for e in current_entries], default=0) + 1
                 new_entry = {
@@ -139,6 +148,7 @@ def render_add_entry():
                 st.session_state.daily_entries = current_entries + [new_entry]
                 st.success(f"Entry for {student} saved successfully!")
                 st.toast(f"Entry for {student} on {date_str} has been added!")
+                time.sleep(1)  # Allow toast to be seen
                 st.rerun()
 
 
