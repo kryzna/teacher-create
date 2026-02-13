@@ -118,24 +118,28 @@ def render_add_entry():
         notes = st.text_area("Notes", placeholder="Document what the student worked on today...", height=150)
         
         if st.button("Save Entry", use_container_width=True):
-            if not student:
-                st.error("Please select a student!")
-            elif not activities:
-                st.error("Please add at least one activity!")
-            else:
-                new_id = max([e["id"] for e in st.session_state.daily_entries], default=0) + 1
-                new_entry = {
-                    "id": new_id,
-                    "student": student,
-                    "date": date.strftime("%Y-%m-%d"),
-                    "subject": subject,
-                    "activities": activities,
-                    "skill_level": skill_level,
-                    "notes": notes
-                }
-                st.session_state.daily_entries.append(new_entry)
-                st.success(f"Entry for {student} saved successfully!")
-                st.rerun()
+            try:
+                if not student:
+                    st.error("Please select a student!")
+                elif not activities:
+                    st.error("Please add at least one activity!")
+                else:
+                    current_entries = st.session_state.daily_entries
+                    new_id = max([e["id"] for e in current_entries], default=0) + 1
+                    new_entry = {
+                        "id": new_id,
+                        "student": student,
+                        "date": date.strftime("%Y-%m-%d"),
+                        "subject": subject,
+                        "activities": activities,
+                        "skill_level": skill_level,
+                        "notes": notes
+                    }
+                    st.session_state.daily_entries = current_entries + [new_entry]
+                    st.success(f"Entry for {student} saved successfully!")
+                    st.rerun()
+            except Exception as e:
+                st.error(f"Error saving entry: {e}")
 
 
 def render_week_view():
