@@ -113,7 +113,8 @@ def render():
         """, unsafe_allow_html=True)
     
     if st.session_state.show_login_modal:
-        render_login_modal()
+        with st.spinner("Loading login..."):
+            render_login_modal()
     else:
         if st.button("Sign In", key="login-trigger"):
             st.session_state.show_login_modal = True

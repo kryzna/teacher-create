@@ -118,21 +118,13 @@ def render_add_entry():
         
         notes = st.text_area("Notes", placeholder="Document what the student worked on today...", height=150)
         
-        date_str = date.strftime("%Y-%m-%d") if date else None
-        existing_entry = any(
-            e["student"] == student and e["date"] == date_str and e["subject"] == subject
-            for e in st.session_state.daily_entries
-        )
-        
-        if existing_entry:
-            st.warning(f"Entry already exists for {student} on {date_str} with subject {subject}")
-        
-        if st.button("Save Entry", use_container_width=True, disabled=existing_entry):
+        if st.button("Save Entry", use_container_width=True):
             if not student:
                 st.error("Please select a student!")
             elif not activities:
                 st.error("Please add at least one activity!")
             else:
+                date_str = date.strftime("%Y-%m-%d") if date else None
                 current_entries = st.session_state.daily_entries
                 new_id = max([e["id"] for e in current_entries], default=0) + 1
                 new_entry = {
