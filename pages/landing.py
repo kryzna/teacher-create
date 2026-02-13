@@ -15,6 +15,7 @@ def render():
     
     st.markdown("""
     <style>
+    [data-testid="stSidebarNav"] {display: none !important;}
     .gradient-bg {
         background: linear-gradient(135deg, #1e3a8a 0%, #0d9488 100%);
         padding: 60px 20px;
