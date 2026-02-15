@@ -1,6 +1,7 @@
 import streamlit as st
 
 from src.monty.session import init_session_state, require_auth, logout_user
+from src.monty.crud import get_user_settings, save_user_settings
 
 
 def render():
@@ -20,6 +21,11 @@ def render():
 
 def init_settings_session_state():
     if "settings" not in st.session_state:
+        user_id = st.session_state.user.get("db_id") if st.session_state.user else None
+        db_settings = get_user_settings(user_id) if user_id else None
+        if db_settings:
+            st.session_state.settings = db_settings
+            return
         st.session_state.settings = {
             "profile": {
                 "name": "Jennifer Adams",
@@ -41,7 +47,7 @@ def init_settings_session_state():
                 "push_activities": True,
                 "push_schedule_changes": True,
                 "weekly_digest": True,
-                "reminder_time": "6:00 PM"
+                "reminder_time": "18:00:00"
             },
             "privacy_security": {
                 "two_factor_auth": False,
@@ -131,14 +137,14 @@ def render_sidebar():
         
         st.markdown("---")
         
-        st.page_link("app.py", label="🏠 Dashboard", icon="🏠")
-        st.page_link("pages/students.py", label="👥 Students", icon="👥")
-        st.page_link("pages/schedule.py", label="📅 Schedule", icon="📅")
-        st.page_link("pages/observations.py", label="👁️ Observations", icon="👁️")
-        st.page_link("pages/reports.py", label="📊 Reports", icon="📊")
-        st.page_link("pages/materials.py", label="📦 Materials", icon="📦")
-        st.page_link("pages/daily_tracking.py", label="📝 Daily Tracking", icon="📝")
-        st.page_link("pages/settings.py", label="⚙️ Settings", icon="⚙️")
+        st.page_link("app.py", label="Dashboard", icon="🏠")
+        st.page_link("pages/students.py", label="Students", icon="👥")
+        st.page_link("pages/schedule.py", label="Schedule", icon="📅")
+        st.page_link("pages/observations.py", label="Observations", icon="👁️")
+        st.page_link("pages/reports.py", label="Reports", icon="📊")
+        st.page_link("pages/materials.py", label="Materials", icon="📦")
+        st.page_link("pages/daily_tracking.py", label="Daily Tracking", icon="📝")
+        st.page_link("pages/settings.py", label="Settings", icon="⚙️")
         
         st.markdown("---")
         
@@ -214,6 +220,9 @@ def render_profile_section():
             "phone": phone,
             "bio": bio
         }
+        user_id = st.session_state.user.get("db_id")
+        if user_id:
+            save_user_settings(user_id, st.session_state.settings)
         st.success("Profile saved successfully!")
     
     st.markdown("---")
@@ -264,6 +273,9 @@ def render_classroom_section():
             "student_count": student_count,
             "assistant_teachers": assistant_teachers
         }
+        user_id = st.session_state.user.get("db_id")
+        if user_id:
+            save_user_settings(user_id, st.session_state.settings)
         st.success("Classroom settings saved successfully!")
 
 
@@ -315,6 +327,9 @@ def render_notifications_section():
             "weekly_digest": weekly_digest,
             "reminder_time": str(reminder_time)
         }
+        user_id = st.session_state.user.get("db_id")
+        if user_id:
+            save_user_settings(user_id, st.session_state.settings)
         st.success("Notification settings saved successfully!")
 
 
@@ -354,6 +369,9 @@ def render_privacy_section():
                 "share_progress_with_parents": share_parents,
                 "analytics_tracking": analytics
             }
+            user_id = st.session_state.user.get("db_id")
+            if user_id:
+                save_user_settings(user_id, st.session_state.settings)
             st.success("Privacy settings saved successfully!")
     
     with col2:
@@ -385,6 +403,9 @@ def render_appearance_section():
             "compact_mode": compact_mode,
             "sidebar_collapsed": sidebar_collapsed
         }
+        user_id = st.session_state.user.get("db_id")
+        if user_id:
+            save_user_settings(user_id, st.session_state.settings)
         st.success("Appearance settings saved successfully!")
     
     st.markdown("---")

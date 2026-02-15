@@ -1,5 +1,6 @@
 import streamlit as st
-from src.monty.session import init_session_state, require_auth
+from src.monty.session import init_session_state, require_auth, reload_from_db, flash, show_flash
+from src.monty.crud import create_student, update_student, delete_student
 
 
 def render():
@@ -9,6 +10,7 @@ def render():
     st.set_page_config(page_title="Students - Monty", page_icon="👥", layout="wide")
     st.markdown("""<style>[data-testid="stSidebarNav"] {display: none !important;}</style>""", unsafe_allow_html=True)
     
+    show_flash()
     render_sidebar()
     render_main_content()
 
@@ -21,14 +23,14 @@ def render_sidebar():
         
         st.markdown("---")
         
-        st.page_link("app.py", label="🏠 Dashboard", icon="🏠")
-        st.page_link("pages/students.py", label="👥 Students", icon="👥")
-        st.page_link("pages/schedule.py", label="📅 Schedule", icon="📅")
-        st.page_link("pages/observations.py", label="👁️ Observations", icon="👁️")
-        st.page_link("pages/reports.py", label="📊 Reports", icon="📊")
-        st.page_link("pages/materials.py", label="📦 Materials", icon="📦")
-        st.page_link("pages/daily_tracking.py", label="📝 Daily Tracking", icon="📝")
-        st.page_link("pages/settings.py", label="⚙️ Settings", icon="⚙️")
+        st.page_link("app.py", label="Dashboard", icon="🏠")
+        st.page_link("pages/students.py", label="Students", icon="👥")
+        st.page_link("pages/schedule.py", label="Schedule", icon="📅")
+        st.page_link("pages/observations.py", label="Observations", icon="👁️")
+        st.page_link("pages/reports.py", label="Reports", icon="📊")
+        st.page_link("pages/materials.py", label="Materials", icon="📦")
+        st.page_link("pages/daily_tracking.py", label="Daily Tracking", icon="📝")
+        st.page_link("pages/settings.py", label="Settings", icon="⚙️")
         
         st.markdown("---")
         
@@ -149,8 +151,9 @@ def render_student_card(student):
         
         with col_delete:
             if st.button("Delete", key=f"delete_{student['id']}", use_container_width=True):
-                st.session_state.students = [s for s in st.session_state.students if s["id"] != student["id"]]
-                st.success(f"Deleted {student['name']}")
+                delete_student(student["id"])
+                reload_from_db()
+                flash(f"Deleted {student['name']}")
                 st.rerun()
 
 
@@ -179,17 +182,14 @@ def render_add_student_form():
         
         with col1:
             if st.button("Update Student", use_container_width=True):
-                for s in st.session_state.students:
-                    if s["id"] == student["id"]:
-                        s["name"] = name
-                        s["age"] = age
-                        s["interests"] = interests
-                        s["allergies"] = allergies
-                        s["parent_name"] = parent_name
-                        s["parent_email"] = parent_email
-                        break
+                update_student(student["id"], {
+                    "name": name, "age": age, "interests": interests,
+                    "allergies": allergies, "parent_name": parent_name,
+                    "parent_email": parent_email,
+                })
                 del st.session_state.edit_student
-                st.success("Student updated successfully!")
+                reload_from_db()
+                flash("Student updated successfully!")
                 st.rerun()
         
         with col2:
@@ -216,18 +216,14 @@ def render_add_student_form():
             elif not parent_name:
                 st.error("Parent name is required!")
             else:
-                new_id = max([s["id"] for s in st.session_state.students], default=0) + 1
-                new_student = {
-                    "id": new_id,
-                    "name": name,
-                    "age": age,
-                    "interests": interests,
-                    "allergies": allergies,
-                    "parent_name": parent_name,
-                    "parent_email": parent_email
-                }
-                st.session_state.students.append(new_student)
-                st.success(f"Added {name} successfully!")
+                user_id = st.session_state.user["db_id"]
+                create_student(user_id, {
+                    "name": name, "age": age, "interests": interests,
+                    "allergies": allergies, "parent_name": parent_name,
+                    "parent_email": parent_email,
+                })
+                reload_from_db()
+                flash(f"Added {name} successfully!")
                 st.rerun()
 
 

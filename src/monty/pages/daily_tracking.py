@@ -1,7 +1,8 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import time
-from src.monty.session import init_session_state, require_auth
+from src.monty.session import init_session_state, require_auth, reload_from_db, flash, show_flash
+from src.monty.crud import create_daily_entry, update_daily_entry
 
 
 def render():
@@ -11,6 +12,7 @@ def render():
     st.set_page_config(page_title="Daily Tracking - Monty", page_icon="📝", layout="wide")
     st.markdown("""<style>[data-testid="stSidebarNav"] {display: none !important;}</style>""", unsafe_allow_html=True)
     
+    show_flash()
     render_sidebar()
     render_main_content()
 
@@ -23,14 +25,14 @@ def render_sidebar():
         
         st.markdown("---")
         
-        st.page_link("app.py", label="🏠 Dashboard", icon="🏠")
-        st.page_link("pages/students.py", label="👥 Students", icon="👥")
-        st.page_link("pages/schedule.py", label="📅 Schedule", icon="📅")
-        st.page_link("pages/observations.py", label="👁️ Observations", icon="👁️")
-        st.page_link("pages/reports.py", label="📊 Reports", icon="📊")
-        st.page_link("pages/materials.py", label="📦 Materials", icon="📦")
-        st.page_link("pages/daily_tracking.py", label="📝 Daily Tracking", icon="📝")
-        st.page_link("pages/settings.py", label="⚙️ Settings", icon="⚙️")
+        st.page_link("app.py", label="Dashboard", icon="🏠")
+        st.page_link("pages/students.py", label="Students", icon="👥")
+        st.page_link("pages/schedule.py", label="Schedule", icon="📅")
+        st.page_link("pages/observations.py", label="Observations", icon="👁️")
+        st.page_link("pages/reports.py", label="Reports", icon="📊")
+        st.page_link("pages/materials.py", label="Materials", icon="📦")
+        st.page_link("pages/daily_tracking.py", label="Daily Tracking", icon="📝")
+        st.page_link("pages/settings.py", label="Settings", icon="⚙️")
         
         st.markdown("---")
         
@@ -85,17 +87,15 @@ def render_add_entry():
         
         with col_save:
             if st.button("Update Entry", use_container_width=True):
-                for e in st.session_state.daily_entries:
-                    if e["id"] == entry["id"]:
-                        e["student"] = student
-                        e["date"] = date.strftime("%Y-%m-%d")
-                        e["subject"] = subject
-                        e["activities"] = activities
-                        e["skill_level"] = skill_level
-                        e["notes"] = notes
-                        break
+                user_id = st.session_state.user["db_id"]
+                update_daily_entry(entry["id"], user_id, {
+                    "student": student, "date": date.strftime("%Y-%m-%d"),
+                    "subject": subject, "activities": activities,
+                    "skill_level": skill_level, "notes": notes,
+                })
                 del st.session_state.edit_entry
-                st.success("Entry updated successfully!")
+                reload_from_db()
+                flash("Entry updated successfully!")
                 st.rerun()
         
         with col_cancel:
@@ -134,21 +134,14 @@ def render_add_entry():
             elif not activities:
                 st.error("Please add at least one activity!")
             else:
-                current_entries = st.session_state.daily_entries
-                new_id = max([e["id"] for e in current_entries], default=0) + 1
-                new_entry = {
-                    "id": new_id,
-                    "student": student,
-                    "date": date_str,
-                    "subject": subject,
-                    "activities": activities,
-                    "skill_level": skill_level,
-                    "notes": notes
-                }
-                st.session_state.daily_entries = current_entries + [new_entry]
-                st.success(f"Entry for {student} saved successfully!")
-                st.toast(f"Entry for {student} on {date_str} has been added!")
-                time.sleep(1)  # Allow toast to be seen
+                user_id = st.session_state.user["db_id"]
+                create_daily_entry(user_id, {
+                    "student": student, "date": date_str,
+                    "subject": subject, "activities": activities,
+                    "skill_level": skill_level, "notes": notes,
+                })
+                reload_from_db()
+                flash(f"Entry for {student} saved successfully!")
                 st.rerun()
 
 

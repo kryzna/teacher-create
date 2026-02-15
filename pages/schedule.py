@@ -1,5 +1,6 @@
 import streamlit as st
-from src.monty.session import init_session_state, require_auth
+from src.monty.session import init_session_state, require_auth, reload_from_db, flash, show_flash
+from src.monty.crud import create_schedule, update_schedule, delete_schedule
 
 
 def render():
@@ -9,6 +10,7 @@ def render():
     st.set_page_config(page_title="Schedule - Monty", page_icon="📅", layout="wide")
     st.markdown("""<style>[data-testid="stSidebarNav"] {display: none !important;}</style>""", unsafe_allow_html=True)
     
+    show_flash()
     render_sidebar()
     render_main_content()
 
@@ -21,14 +23,14 @@ def render_sidebar():
         
         st.markdown("---")
         
-        st.page_link("app.py", label="🏠 Dashboard", icon="🏠")
-        st.page_link("pages/students.py", label="👥 Students", icon="👥")
-        st.page_link("pages/schedule.py", label="📅 Schedule", icon="📅")
-        st.page_link("pages/observations.py", label="👁️ Observations", icon="👁️")
-        st.page_link("pages/reports.py", label="📊 Reports", icon="📊")
-        st.page_link("pages/materials.py", label="📦 Materials", icon="📦")
-        st.page_link("pages/daily_tracking.py", label="📝 Daily Tracking", icon="📝")
-        st.page_link("pages/settings.py", label="⚙️ Settings", icon="⚙️")
+        st.page_link("app.py", label="Dashboard", icon="🏠")
+        st.page_link("pages/students.py", label="Students", icon="👥")
+        st.page_link("pages/schedule.py", label="Schedule", icon="📅")
+        st.page_link("pages/observations.py", label="Observations", icon="👁️")
+        st.page_link("pages/reports.py", label="Reports", icon="📊")
+        st.page_link("pages/materials.py", label="Materials", icon="📦")
+        st.page_link("pages/daily_tracking.py", label="Daily Tracking", icon="📝")
+        st.page_link("pages/settings.py", label="Settings", icon="⚙️")
         
         st.markdown("---")
         
@@ -89,8 +91,9 @@ def render_week_view():
             
             with col_delete:
                 if st.button("Delete", key=f"delete_activity_{activity['id']}", use_container_width=True):
-                    st.session_state.schedule = [a for a in st.session_state.schedule if a["id"] != activity["id"]]
-                    st.success(f"Deleted {activity['activity']}")
+                    delete_schedule(activity["id"])
+                    reload_from_db()
+                    flash(f"Deleted {activity['activity']}")
                     st.rerun()
 
 
@@ -119,16 +122,13 @@ def render_add_activity_form():
         
         with col_save:
             if st.button("Update Activity", use_container_width=True):
-                for a in st.session_state.schedule:
-                    if a["id"] == activity["id"]:
-                        a["day"] = day
-                        a["time"] = time
-                        a["duration"] = duration
-                        a["students"] = students
-                        a["activity"] = activity_name
-                        break
+                update_schedule(activity["id"], {
+                    "day": day, "time": time, "duration": duration,
+                    "students": students, "activity": activity_name,
+                })
                 del st.session_state.edit_activity
-                st.success("Activity updated successfully!")
+                reload_from_db()
+                flash("Activity updated successfully!")
                 st.rerun()
         
         with col_cancel:
@@ -155,19 +155,14 @@ def render_add_activity_form():
             elif not time:
                 st.error("Time is required!")
             else:
-                new_id = max([a["id"] for a in st.session_state.schedule], default=0) + 1
-                new_activity = {
-                    "id": new_id,
-                    "day": day,
-                    "time": time,
-                    "activity": activity_name,
-                    "duration": duration,
-                    "students": students
-                }
-                st.session_state.schedule.append(new_activity)
-                st.success(f"Added {activity_name} successfully!")
+                user_id = st.session_state.user["db_id"]
+                create_schedule(user_id, {
+                    "day": day, "time": time, "activity": activity_name,
+                    "duration": duration, "students": students,
+                })
+                reload_from_db()
+                flash(f"Added {activity_name} successfully!")
                 st.rerun()
 
 
-if __name__ == "__main__":
-    render()
+render()

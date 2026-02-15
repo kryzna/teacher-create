@@ -22,14 +22,14 @@ def render_sidebar():
         
         st.markdown("---")
         
-        st.page_link("app.py", label="🏠 Dashboard", icon="🏠")
-        st.page_link("pages/students.py", label="👥 Students", icon="👥")
-        st.page_link("pages/schedule.py", label="📅 Schedule", icon="📅")
-        st.page_link("pages/observations.py", label="👁️ Observations", icon="👁️")
-        st.page_link("pages/reports.py", label="📊 Reports", icon="📊")
-        st.page_link("pages/materials.py", label="📦 Materials", icon="📦")
-        st.page_link("pages/daily_tracking.py", label="📝 Daily Tracking", icon="📝")
-        st.page_link("pages/settings.py", label="⚙️ Settings", icon="⚙️")
+        st.page_link("app.py", label="Dashboard", icon="🏠")
+        st.page_link("pages/students.py", label="Students", icon="👥")
+        st.page_link("pages/schedule.py", label="Schedule", icon="📅")
+        st.page_link("pages/observations.py", label="Observations", icon="👁️")
+        st.page_link("pages/reports.py", label="Reports", icon="📊")
+        st.page_link("pages/materials.py", label="Materials", icon="📦")
+        st.page_link("pages/daily_tracking.py", label="Daily Tracking", icon="📝")
+        st.page_link("pages/settings.py", label="Settings", icon="⚙️")
         
         st.markdown("---")
         
@@ -183,5 +183,4 @@ INTERESTS
     return content
 
 
-if __name__ == "__main__":
-    render()
+render()

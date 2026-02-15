@@ -1,6 +1,7 @@
 import streamlit as st
 
-from src.monty.session import init_session_state, require_auth
+from src.monty.session import init_session_state, require_auth, reload_from_db, flash, show_flash
+from src.monty.crud import create_material, update_material, increment_material_usage
 
 
 def render():
@@ -10,6 +11,7 @@ def render():
     st.set_page_config(page_title="Materials - Monty", page_icon="📦", layout="wide")
     st.markdown("""<style>[data-testid="stSidebarNav"] {display: none !important;}</style>""", unsafe_allow_html=True)
     
+    show_flash()
     render_sidebar()
     render_main_content()
 
@@ -22,14 +24,14 @@ def render_sidebar():
         
         st.markdown("---")
         
-        st.page_link("app.py", label="🏠 Dashboard", icon="🏠")
-        st.page_link("pages/students.py", label="👥 Students", icon="👥")
-        st.page_link("pages/schedule.py", label="📅 Schedule", icon="📅")
-        st.page_link("pages/observations.py", label="👁️ Observations", icon="👁️")
-        st.page_link("pages/reports.py", label="📊 Reports", icon="📊")
-        st.page_link("pages/materials.py", label="📦 Materials", icon="📦")
-        st.page_link("pages/daily_tracking.py", label="📝 Daily Tracking", icon="📝")
-        st.page_link("pages/settings.py", label="⚙️ Settings", icon="⚙️")
+        st.page_link("app.py", label="Dashboard", icon="🏠")
+        st.page_link("pages/students.py", label="Students", icon="👥")
+        st.page_link("pages/schedule.py", label="Schedule", icon="📅")
+        st.page_link("pages/observations.py", label="Observations", icon="👁️")
+        st.page_link("pages/reports.py", label="Reports", icon="📊")
+        st.page_link("pages/materials.py", label="Materials", icon="📦")
+        st.page_link("pages/daily_tracking.py", label="Daily Tracking", icon="📝")
+        st.page_link("pages/settings.py", label="Settings", icon="⚙️")
         
         st.markdown("---")
         
@@ -125,11 +127,9 @@ def render_material_card(material):
         
         with col_use:
             if st.button("Use", key=f"use_{material['id']}", use_container_width=True):
-                for m in st.session_state.materials:
-                    if m["id"] == material["id"]:
-                        m["times_used"] = m.get("times_used", 0) + 1
-                        break
-                st.success(f"Recorded use of {material['name']}")
+                increment_material_usage(material["id"])
+                reload_from_db()
+                flash(f"Recorded use of {material['name']}")
                 st.rerun()
     
     if "view_material" in st.session_state and st.session_state.view_material["id"] == material["id"]:
@@ -172,16 +172,14 @@ def render_add_material_form():
         
         with col_save:
             if st.button("Update Material", use_container_width=True):
-                for m in st.session_state.materials:
-                    if m["id"] == material["id"]:
-                        m["name"] = name
-                        m["category"] = category
-                        m["age_range"] = age_range
-                        m["description"] = description
-                        m["in_stock"] = in_stock
-                        break
+                update_material(material["id"], {
+                    "name": name, "category": category, "age_range": age_range,
+                    "description": description, "in_stock": in_stock,
+                    "times_used": material.get("times_used", 0),
+                })
                 del st.session_state.edit_material
-                st.success("Material updated successfully!")
+                reload_from_db()
+                flash("Material updated successfully!")
                 st.rerun()
         
         with col_cancel:
@@ -202,18 +200,13 @@ def render_add_material_form():
             elif not description:
                 st.error("Description is required!")
             else:
-                new_id = max([m["id"] for m in st.session_state.materials], default=0) + 1
-                new_material = {
-                    "id": new_id,
-                    "name": name,
-                    "category": category,
-                    "age_range": age_range,
-                    "description": description,
-                    "in_stock": in_stock,
-                    "times_used": 0
-                }
-                st.session_state.materials.append(new_material)
-                st.success(f"Added {name} successfully!")
+                user_id = st.session_state.user["db_id"]
+                create_material(user_id, {
+                    "name": name, "category": category, "age_range": age_range,
+                    "description": description, "in_stock": in_stock,
+                })
+                reload_from_db()
+                flash(f"Added {name} successfully!")
                 st.rerun()
 
 
@@ -270,5 +263,4 @@ def render_usage_statistics():
                 st.write(f"Used {m.get('times_used', 0)} times")
 
 
-if __name__ == "__main__":
-    render()
+render()

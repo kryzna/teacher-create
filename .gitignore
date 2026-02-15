@@ -22,6 +22,14 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Database
+data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # Logs
 *.log
 npm-debug.log*

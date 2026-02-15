@@ -1,22 +1,28 @@
 import streamlit as st
 
+from src.monty.database import get_session, hash_password
+from src.monty.models import User
 from src.monty.session import login_user, logout_user
 
 
-DEMO_USER = {
-    "id": "demo_001",
-    "name": "Demo Teacher",
-    "email": "demo@monty.app",
-    "school": "Montessori Academy",
-    "classroom": "Primary",
-}
-
-
 def login(username, password):
-    if username == "demo" and password == "demo":
-        login_user(DEMO_USER)
-        return True
-    return False
+    session = get_session()
+    try:
+        user = session.query(User).filter_by(username=username).first()
+        if user and user.password_hash == hash_password(password):
+            user_data = {
+                "db_id": user.id,
+                "id": f"user_{user.id:03d}",
+                "name": user.name,
+                "email": user.email,
+                "school": user.school or "",
+                "classroom": user.classroom or "",
+            }
+            login_user(user_data)
+            return True
+        return False
+    finally:
+        session.close()
 
 
 def logout():
